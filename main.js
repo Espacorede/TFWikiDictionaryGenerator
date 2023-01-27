@@ -122,15 +122,13 @@ function searchByToken(token = $("#search").val(), source) {
     let output;
 
     // Check the search mode and call the appropriate function
-    if (mode === "proto") {
-        output = getTranslationsByToken(token, "tf_proto_obj_defs");
-    } else if (mode === "proto2") {
+    if (mode === "tf_proto_obj_defs2") {
         // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#contract names
         output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
-    } else if (mode === "proto3") {
+    } else if (mode === "tf_proto_obj_defs3") {
         output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
     } else {
-        output = getTranslationsByToken(token, "tf");
+        output = getTranslationsByToken(token, mode);
     }
 
     // If translations are found, display them in the output element
@@ -142,7 +140,7 @@ function searchByToken(token = $("#search").val(), source) {
             $("#fuzzy-area").fadeOut();
         }
     } else {
-        $("#output").html("No tokens found!");
+        $("#output").html(`No tokens found on ${mode}!`);
     }
 }
 
@@ -151,20 +149,21 @@ function searchByString() {
     // Show the output area
     $("#output-area").fadeIn();
 
+    const mode = $("#searchmode").val();
     let output;
 
     // Check the current search mode
-    if ($("#searchmode").val() !== "tf") {
+    if (mode.includes("tf_proto_obj_defs")) {
         output = getTranslationsByString($("#search").val(), "tf_proto_obj_defs");
     } else {
-        output = getTranslationsByString($("#search").val(), "tf");
+        output = getTranslationsByString($("#search").val(), mode);
     }
 
     // If translations are found, display them in the output element
     if (output !== undefined) {
         $("#output").text(output);
     } else {
-        $("#output").html(`No strings found on ${$("#searchmode").val()}.`);
+        $("#output").html(`No strings found on ${mode}!`);
     }
 }
 
@@ -208,6 +207,30 @@ const languageFiles = {
         "turkish"
         // "ukrainian",
         // "vietnamese"
+    ],
+    tf_quests: [
+        "brazilian",
+        "czech",
+        "danish",
+        "dutch",
+        "english",
+        "finnish",
+        "french",
+        "german",
+        "hungarian",
+        "italian",
+        "japanese",
+        "korean",
+        "norwegian",
+        "polish",
+        "portuguese",
+        "romanian",
+        "russian",
+        "schinese",
+        "spanish",
+        "swedish",
+        "tchinese",
+        "turkish"
     ],
     tf_proto_obj_defs: [
         "brazilian",
@@ -279,6 +302,7 @@ const langCodes = {
 
 const languageData = {
     tf: [],
+    tf_quests: [],
     tf_proto_obj_defs: []
 };
 
