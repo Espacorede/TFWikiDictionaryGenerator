@@ -37,18 +37,27 @@ function cleanString(s, language) {
     let string = s.trim();
 
     // Regex to find problematic characters
-    const escapeRegex = new RegExp(/\||\*|''+|\[\[+|~/, ["gim"]);
+    const escapeRegex = new RegExp(/\||\*|''+|\[\[+|~|http/, ["gim"]);
     const escapeRegexMatch = escapeRegex.exec(string);
 
     // Replace newline characters with <br>
-    string = string.replace(new RegExp(/(\\\\n|\\n)/, ["gim"]), "<br>");
+    string = string.replace(/\n/g, "<br>");
     // Replace escaped quotation marks with regular quotation marks
-    string = string.replace(new RegExp(/(\\\\"|\\")/, ["gim"]), "\"");
+    string = string.replace(new RegExp(/\\"/, ["gim"]), "\"");
 
     // Wrap everything in <nowiki> tags
     if (escapeRegexMatch !== null) {
         return `<nowiki>${string}</nowiki>`;
     }
+
+    return string;
+}
+
+// This function removes any problematic characters from the output entry
+function cleanEntry(s) {
+    let string = s.trim();
+
+    string = string.replace(new RegExp(/\||\*|''+|\[\[+|~|\/|\n|:/, ["gim"]), "");
 
     return string;
 }
@@ -91,7 +100,7 @@ function getTranslationsByToken(token, file) {
 
         // Create the dictionary entry for the token, using the custom entry if provided, otherwise using the string
         let dicEntry = `# ${token}\n`
-        dicEntry += custonEntry ? `${custonEntry}:\n` : `${findString(file, "english", token, true).toLowerCase()}:\n`
+        dicEntry += custonEntry ? `${custonEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`
         dicEntry += `  en: ${custonPrefix}${findString(file, "english", token)}${customSuffix}\n`;
 
         // Find translations for the token in all languages except "english" and add them to the translations object
