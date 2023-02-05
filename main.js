@@ -93,15 +93,25 @@ function getTranslationsByToken(token, file) {
         // Initialize an empty object to store translations
         const translations = {};
         // Get any custom prefix, suffix, or entry specified by the user
-        const custonEntry = $("#customentry").val() || ""
-        const custonPrefix = $("#customprefix").val() || ""
-        const customSuffix = $("#customsuffix").val() || ""
+        const customEntry = document.getElementById("customentry").value || "";
+        const customPrefix = document.getElementById("customprefix").value || "";
+        const customSuffix = document.getElementById("customsuffix").value || "";
+        const useLangEl = document.getElementById("uselang");
+        const useLang = useLangEl.checked;
+        const customIdent = $("#customident").val() || " "
         // const customComment = $("#customecomment").val() || ""
 
         // Create the dictionary entry for the token, using the custom entry if provided, otherwise using the string
-        let dicEntry = `# ${token}\n`
-        dicEntry += custonEntry ? `${custonEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`
-        dicEntry += `  en: ${custonPrefix}${findString(file, "english", token)}${customSuffix}\n`;
+        let dicEntry = "";
+
+        if (!useLang) {
+            dicEntry += `# ${token}\n`
+            dicEntry += customEntry ? `${customEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`
+            dicEntry += `  en: ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
+        } else {
+            dicEntry += `{{lang <!-- Source: ${file}_english.txt / ${token.replace("y	f", "y\\tf") } -->\n`
+            dicEntry += `${customIdent}| en = ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
+        }
 
         // Find translations for the token in all languages except "english" and add them to the translations object
         for (const language of languageFiles[file]) {
@@ -112,8 +122,16 @@ function getTranslationsByToken(token, file) {
 
         // Add the translations to the dictionary entry, sorting them by language code
         for (const key of Object.keys(translations).sort()) {
-            dicEntry += `  ${key}: ${custonPrefix}${translations[key]}${customSuffix}\n`;
+            if (!useLang) {
+                dicEntry += `  ${key}: ${customPrefix}${translations[key]}${customSuffix}\n`;
+            } else {
+                dicEntry += `${customIdent}| ${key} = ${customPrefix}${translations[key]}${customSuffix}\n`;
+            }
         };
+
+        if (useLang) {
+            dicEntry += "}}"
+        }
 
         return dicEntry;
     }
@@ -136,6 +154,8 @@ function searchByToken(token = $("#search").val(), source) {
         output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
     } else if (mode === "tf_proto_obj_defs3") {
         output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
+    } else if (mode === "closecaption") {
+        output = getTranslationsByToken(`${token.replace("y\\tf", "y	f")}`, mode);
     } else {
         output = getTranslationsByToken(token, mode);
     }
@@ -185,6 +205,38 @@ function copyOutput() {
 }
 
 const languageFiles = {
+    closecaption: [
+        "brazilian",
+        // "bulgarian",
+        "czech",
+        "danish",
+        "dutch",
+        "english",
+        "finnish",
+        "french",
+        "german",
+        // "greek",
+        "hungarian",
+        "italian",
+        "japanese",
+        "korean",
+        // "koreana",
+        // "latam",
+        "norwegian",
+        // "pirate",
+        "polish",
+        "portuguese",
+        "romanian",
+        "russian",
+        "schinese",
+        "spanish",
+        "swedish",
+        "tchinese",
+        // "thai",
+        "turkish"
+        // "ukrainian",
+        // "vietnamese"
+    ],
     tf: [
         "brazilian",
         // "bulgarian",
@@ -310,6 +362,7 @@ const langCodes = {
 };
 
 const languageData = {
+    closecaption: [],
     tf: [],
     tf_quests: [],
     tf_proto_obj_defs: []
