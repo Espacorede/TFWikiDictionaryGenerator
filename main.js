@@ -19,6 +19,22 @@ $(document).ready(function () {
             $("#copy-output").fadeOut();
         }, 5000);
     });
+
+
+    // Restore settings to default state
+    document.getElementById("uselang").checked = false;
+    document.getElementById("ytDemo").checked = false;
+
+
+    // Disable option when generating yt titles
+    document.getElementById("ytDemo").addEventListener("change", function () {
+        const fieldsToDisable = ["uselang", "customentry", "customsuffix", "customprefix", "customident", "searchmode"];
+
+        fieldsToDisable.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            field.disabled = this.checked;
+        });
+    });
 });
 
 // This function loads a language file from the specified path and passes it to the callback function.
@@ -85,6 +101,69 @@ function getTranslationsByString(string, file) {
     return getTranslationsByToken(findToken(string, file), file);
 }
 
+function getTranslationsforYT(token, isString = false) {
+    if (isString) {
+        token = findToken(token, "tf");
+    }
+
+    const englishString = findString("tf", "english", token, true);
+
+    if (!englishString) {
+        return "Item not found";
+    }
+
+    const ytLanguages = ["english", "spanish", "brazilian", "russian"];
+    let output = "";
+    let count = 0;
+
+    for (const ytLang of ytLanguages) {
+        const translationString = findString("tf", `${ytLang}`, token, true);
+
+        if (translationString) {
+            // Todo support other demos
+            const english = englishString.replace(/(Taunt: The |Taunt: )/g, "").trim();
+            const translation = translationString.replace(/(Taunt: The |Taunt: |Присмех — |Hån: Den |Hån: |Verspottung: Der |Verspottung: Die |Verspottung: Das |Verspottung: |Burla: El |Burla: La |Burla: |Pilkka: |Raillerie : Le |Raillerie : Les |Raillerie : L'|Raillerie : La |Raillerie : |Beszólás: A |Beszólás: |Provocazione: L'|Provocazione: Il |Provocazione: Le |Provocazione: Un |Provocazione: La |Provocazione: I |Provocazione: Lo |Provocazione: |도발: |Bespotting: De |Bespotting: Het |Bespotting: |Drwina: |Provocação: O |Provocação: A |Provocação: |Насмешка: |ท่าเยาะเย้ย: The |ท่าเยาะเย้ย: |Alay Hareketi: |Alay: |Кепкування: |嘲讽：|嘲諷：|挑発: The |挑発: |Beszlás: )/g, "").trim();
+            const link = english.replace(/ /g, "_");
+
+            // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#YouTube_titles_.2F_SNS
+            const desc = {
+                english: `A video demonstrating the ${english} taunt.\nhttps://wiki.teamfortress.com/wiki/${link}\n\nThis is part of an ongoing weapon demonstration project.\nHelp us out! Learn more at: https://wiki.teamfortress.com/wiki/Team_Fortress_Wiki:Weapon_Demonstration`,
+                spanish: `Un vídeo que demuestra la burla ${translation}.\nhttps://wiki.teamfortress.com/wiki/${link}/es\n\nEsto forma parte del proyecto de demostración de armas.\n¡Ayúdanos! Infórmate en: https://wiki.teamfortress.com/wiki/Team_Fortress_Wiki:Weapon_Demonstration`,
+                brazilian: `Um vídeo demonstrando a provocação "${translation}".\nhttps://wiki.teamfortress.com/wiki/${link}/pt-br\n\nEste vídeo faz parte do nosso projeto de demonstração de armas.\nQuer nos ajudar? Acesse: https://wiki.teamfortress.com/wiki/Team_Fortress_Wiki:Weapon_Demonstration (em inglês)`,
+                russian: `Видеоролик, демонстрирующий насмешку: ${translation}.\nhttps://wiki.teamfortress.com/wiki/${link}/ru\n\nЭто часть текущего проекта по демонстрации оружия.\nПомогите нам! Узнайте больше на: https://wiki.teamfortress.com/wiki/Team_Fortress_Wiki:Weapon_Demonstration`
+            };
+
+            const title = {
+                english: `Taunt Demonstration: ${english}`,
+                spanish: `Demostración de burla: ${translation}`,
+                brazilian: `Demonstração de provocação: ${translation}`,
+                russian: `Демонстрация насмешки: ${translation}`
+            };
+
+            if (count % 2 === 0) {
+                output += '<div class="row">';
+            }
+
+            output += `<div class="column column-50"><div class="container">
+
+                <h3>${ytLang}</h3>
+                <pre id="yt-title-${ytLang}">${title[ytLang]}</pre>
+                <button class="button button-small" data-clipboard-action="copy" data-clipboard-target="#yt-title-${ytLang}">Copy video title</button>
+                <pre id="yt-desc-${ytLang}">${desc[ytLang]}</pre>
+                <button class="button button-small" data-clipboard-action="copy" data-clipboard-target="#yt-desc-${ytLang}">Copy video description</button>
+            </div></div>`;
+
+            if (count % 2 !== 0 || count === ytLanguages.length - 1) {
+                output += "</div><hr>";
+            }
+
+            count++;
+        }
+    }
+
+    return output;
+}
+
 // This function takes in a token and a file and returns a dictionary entry for that token in the file.
 // It also allows for custom prefixes, suffixes, and entries to be added to the dictionary entry.
 function getTranslationsByToken(token, file) {
@@ -96,21 +175,20 @@ function getTranslationsByToken(token, file) {
         const customEntry = document.getElementById("customentry").value || "";
         const customPrefix = document.getElementById("customprefix").value || "";
         const customSuffix = document.getElementById("customsuffix").value || "";
-        const useLangEl = document.getElementById("uselang");
-        const useLang = useLangEl.checked;
+        const useLang = document.getElementById("uselang").checked;
         const customIdent = $("#customident").val() || " "
         // const customComment = $("#customecomment").val() || ""
 
         // Create the dictionary entry for the token, using the custom entry if provided, otherwise using the string
         let dicEntry = "";
 
-        if (!useLang) {
+        if (useLang) {
+            dicEntry += `{{lang <!-- Source: ${file}_english.txt / ${token.replace("y	f", "y\\tf")} -->\n`
+            dicEntry += `${customIdent}| en = ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
+        } else {
             dicEntry += `# ${token}\n`
             dicEntry += customEntry ? `${customEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`
             dicEntry += `  en: ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
-        } else {
-            dicEntry += `{{lang <!-- Source: ${file}_english.txt / ${token.replace("y	f", "y\\tf") } -->\n`
-            dicEntry += `${customIdent}| en = ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
         }
 
         // Find translations for the token in all languages except "english" and add them to the translations object
@@ -122,10 +200,10 @@ function getTranslationsByToken(token, file) {
 
         // Add the translations to the dictionary entry, sorting them by language code
         for (const key of Object.keys(translations).sort()) {
-            if (!useLang) {
-                dicEntry += `  ${key}: ${customPrefix}${translations[key]}${customSuffix}\n`;
-            } else {
+            if (useLang) {
                 dicEntry += `${customIdent}| ${key} = ${customPrefix}${translations[key]}${customSuffix}\n`;
+            } else {
+                dicEntry += `  ${key}: ${customPrefix}${translations[key]}${customSuffix}\n`;
             }
         };
 
@@ -148,29 +226,39 @@ function searchByToken(token = $("#search").val(), source) {
     const mode = $("#searchmode").val();
     let output;
 
-    // Check the search mode and call the appropriate function
-    if (mode === "tf_proto_obj_defs2") {
-        // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#contract names
-        output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
-    } else if (mode === "tf_proto_obj_defs3") {
-        output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
-    } else if (mode === "closecaption") {
-        output = getTranslationsByToken(`${token.replace("y\\tf", "y	f")}`, mode);
+
+    if (document.getElementById("ytDemo").checked) {
+        output = getTranslationsforYT(token);
+        displayOutput(output, "#outputyt", "No tokens found!", true);
+
+        $("#copy-output-btn").hide();
+        $("#output").hide();
+        $("#outputyt").show();
     } else {
-        output = getTranslationsByToken(token, mode);
-    }
+        // Check the search mode and call the appropriate function
+        if (mode === "tf_proto_obj_defs2") {
+            // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#contract names
+            output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
+        } else if (mode === "tf_proto_obj_defs3") {
+            output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
+        } else if (mode === "closecaption") {
+            output = getTranslationsByToken(`${token.replace("y\\tf", "y	f")}`, mode);
+        } else {
+            output = getTranslationsByToken(token, mode);
+        }
 
-    // If translations are found, display them in the output element
-    if (output !== undefined) {
-        $("#output").text(output);
+        displayOutput(output, "#output", `No tokens found on ${mode}!`);
 
-        // Hide the "fuzzy" area if the search was not triggered by that feature
-        if (source !== "fuzzy") {
+        if (output !== undefined && source !== "fuzzy") {
             $("#fuzzy-area").fadeOut();
         }
-    } else {
-        $("#output").html(`No tokens found on ${mode}!`);
+
+        $("#copy-output-btn").show();
+        $("#output").show();
+        $("#outputyt").hide();
     }
+
+
 }
 
 // This function searches for translations of a given string.
@@ -181,18 +269,34 @@ function searchByString() {
     const mode = $("#searchmode").val();
     let output;
 
-    // Check the current search mode
-    if (mode.includes("tf_proto_obj_defs")) {
-        output = getTranslationsByString($("#search").val(), "tf_proto_obj_defs");
-    } else {
-        output = getTranslationsByString($("#search").val(), mode);
-    }
+    if (document.getElementById("ytDemo").checked) {
+        output = getTranslationsforYT($("#search").val(), true);
+        displayOutput(output, "#outputyt", "No strings found!", true);
 
-    // If translations are found, display them in the output element
-    if (output !== undefined) {
-        $("#output").text(output);
+        $("#copy-output-btn").hide();
+        $("#output").hide();
+        $("#outputyt").show();
     } else {
-        $("#output").html(`No strings found on ${mode}!`);
+        output = getTranslationsByString($("#search").val(), mode.includes("tf_proto_obj_defs") ? "tf_proto_obj_defs" : mode);
+        displayOutput(output, "#output", `No strings found on ${mode}!`);
+
+        $("#copy-output-btn").show();
+        $("#output").show();
+        $("#outputyt").hide();
+    }
+}
+
+function displayOutput(output, outputElement, message, renderHTML = false) {
+    const targetElement = document.querySelector(outputElement);
+
+    if (output !== undefined) {
+        if (renderHTML) {
+            targetElement.innerHTML = output;
+        } else {
+            targetElement.textContent = output;
+        }
+    } else {
+        targetElement.innerHTML = message;
     }
 }
 

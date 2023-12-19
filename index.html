@@ -18,7 +18,7 @@
 <body>
     <div class="container">
         <h1 class="superdupertitle">Dictionary Generator</h1>
-        <p class="superdupertitle">Translations may not be completely accurate. Use it at your own risk.</p>
+        <p class="superdupertitle">Translations may not be completely accurate. <u>Use it at your own risk.</u></p>
 
         <div class="row">
             <div class="column">
@@ -32,8 +32,18 @@
                 </div>
                 <div class="row">
                     <div class="column"><input type="checkbox" id="uselang">
-                    <label class="label-inline" for="uselang">Use {{lang}} template</label></div>
-                    <div class="column"><input type="text" placeholder="Custom ident..." id="customident"></div>
+                        <label class="label-inline" for="uselang">Use {{lang}} template</label>
+                    </div>
+                    <div class="column"><input type="text" placeholder="{{lang}}: Custom ident..." id="customident">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="column"><input type="checkbox" id="ytDemo">
+                        <label class="label-inline" for="ytDemo">Generate YouTube title</label>
+                    </div>
+                    <div class="column"><select id="ytDemoType">
+                            <option value="taunt">YouTube: Taunt Demonstration</option>
+                        </select></div>
                 </div>
             </div>
 
@@ -63,11 +73,12 @@
 
         <div id="output-area">
             <pre id="output"></pre>
+            <div id="outputyt"></div>
 
             <div class="float-left">
                 <div class="row">
                     <div class="column">
-                        <button class="button button-small" data-clipboard-action="copy"
+                        <button id="copy-output-btn" class="button button-small" data-clipboard-action="copy"
                             data-clipboard-target="#output">
                             Copy to clipboard
                         </button>
