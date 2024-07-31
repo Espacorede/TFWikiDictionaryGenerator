@@ -40,8 +40,8 @@ $(document).ready(function () {
 // This function loads a language file from the specified path and passes it to the callback function.
 function loadLangFile(language, callback) {
     $.ajax({
-        url: `generated/${language}.json`,
-        dataType: "json",
+        url: `https://worker.dictionary-generator.espacore.de/${language}.txt`,
+        dataType: "text",
         success: function (data) {
             return callback(data);
         }
@@ -479,7 +479,7 @@ for (const file in languageFiles) {
         // Load the language file using the loadLangFile function and pass it a callback
         loadLangFile(`${file}_${language}`, function (response) {
             // Store the data from the loaded language file in the languageData object
-            languageData[file][language] = response.data;
+            languageData[file][language] = VDF.parse(response)["lang"]["Tokens"];
         });
     }
 }
