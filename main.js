@@ -141,7 +141,7 @@ function getTranslationsforYT(token, isString = false) {
             };
 
             if (count % 2 === 0) {
-                output += '<div class="row">';
+                output += "<div class=\"row\">";
             }
 
             output += `<div class="column column-50"><div class="container">
@@ -176,18 +176,24 @@ function getTranslationsByToken(token, file) {
         const customPrefix = document.getElementById("customprefix").value || "";
         const customSuffix = document.getElementById("customsuffix").value || "";
         const useLang = document.getElementById("uselang").checked;
-        const customIdent = $("#customident").val() || " "
+        const customIdent = $("#customident").val() || " ";
         // const customComment = $("#customecomment").val() || ""
+        const mode = $("#searchmode").val();
 
         // Create the dictionary entry for the token, using the custom entry if provided, otherwise using the string
         let dicEntry = "";
 
         if (useLang) {
-            dicEntry += `{{lang <!-- Source: ${file}_english.txt / ${token.replace("y	f", "y\\tf")} -->\n`
+            dicEntry += `{{lang <!-- Source: ${file.replace("hl2_", "hl2/")}_english.txt / ${token.replace("y	f", "y\\tf")} -->\n`;
             dicEntry += `${customIdent}| en = ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
         } else {
-            dicEntry += `# ${token}\n`
-            dicEntry += customEntry ? `${customEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`
+            if (mode !== "tf_proto_obj_defs2") {
+                dicEntry += `# ${token}\n`;
+                dicEntry += customEntry ? `${customEntry}:\n` : `${cleanEntry(findString(file, "english", token, true).toLowerCase())}:\n`;
+            } else {
+                dicEntry += customEntry ? `${customEntry}:\n` : `${token.replace(/_/g, " ").split("{")[0].trim()}:\n`;
+            }
+
             dicEntry += `  en: ${customPrefix}${findString(file, "english", token)}${customSuffix}\n`;
         }
 
@@ -208,11 +214,12 @@ function getTranslationsByToken(token, file) {
         };
 
         if (useLang) {
-            dicEntry += "}}"
+            dicEntry += "}}";
         }
 
         return dicEntry;
     }
+
 }
 
 // This function searches for translations of a given token.
@@ -226,39 +233,40 @@ function searchByToken(token = $("#search").val(), source) {
     const mode = $("#searchmode").val();
     let output;
 
+    loadLanguageFiles(mode).then(() => {
+        if (document.getElementById("ytDemo").checked) {
+            output = getTranslationsforYT(token);
+            displayOutput(output, "#outputyt", "No tokens found!", true);
 
-    if (document.getElementById("ytDemo").checked) {
-        output = getTranslationsforYT(token);
-        displayOutput(output, "#outputyt", "No tokens found!", true);
-
-        $("#copy-output-btn").hide();
-        $("#output").hide();
-        $("#outputyt").show();
-    } else {
-        // Check the search mode and call the appropriate function
-        if (mode === "tf_proto_obj_defs2") {
-            // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#contract names
-            output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
-        } else if (mode === "tf_proto_obj_defs3") {
-            output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
-        } else if (mode === "closecaption") {
-            output = getTranslationsByToken(`${token.replace("y\\tf", "y	f")}`, mode);
+            $("#copy-output-btn").hide();
+            $("#output").hide();
+            $("#outputyt").show();
         } else {
-            output = getTranslationsByToken(token, mode);
+            // Check the search mode and call the appropriate function
+            if (mode === "tf_proto_obj_defs2") {
+                // https://wiki.teamfortress.com/wiki/Template:Dictionary/common_strings#contract names
+                output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 4 }`, "tf_proto_obj_defs");
+            } else if (mode === "tf_proto_obj_defs3") {
+                output = getTranslationsByToken(`${token.replace(/ /g, "_")} { field_number: 2 }`, "tf_proto_obj_defs");
+            } else if (mode === "closecaption") {
+                output = getTranslationsByToken(`${token.replace("y\\tf", "y	f")}`, mode);
+            } else {
+                output = getTranslationsByToken(token, mode);
+            }
+
+            displayOutput(output, "#output", `No tokens found on ${mode}!`);
+
+            if (output !== undefined && source !== "fuzzy") {
+                $("#fuzzy-area").fadeOut();
+            }
+
+            $("#copy-output-btn").show();
+            $("#output").show();
+            $("#outputyt").hide();
         }
-
-        displayOutput(output, "#output", `No tokens found on ${mode}!`);
-
-        if (output !== undefined && source !== "fuzzy") {
-            $("#fuzzy-area").fadeOut();
-        }
-
-        $("#copy-output-btn").show();
-        $("#output").show();
-        $("#outputyt").hide();
-    }
-
-
+    }).catch(error => {
+        console.error(error);
+    });
 }
 
 // This function searches for translations of a given string.
@@ -269,21 +277,25 @@ function searchByString() {
     const mode = $("#searchmode").val();
     let output;
 
-    if (document.getElementById("ytDemo").checked) {
-        output = getTranslationsforYT($("#search").val(), true);
-        displayOutput(output, "#outputyt", "No strings found!", true);
+    loadLanguageFiles(mode).then(() => {
+        if (document.getElementById("ytDemo").checked) {
+            output = getTranslationsforYT($("#search").val(), true);
+            displayOutput(output, "#outputyt", "No strings found!", true);
 
-        $("#copy-output-btn").hide();
-        $("#output").hide();
-        $("#outputyt").show();
-    } else {
-        output = getTranslationsByString($("#search").val(), mode.includes("tf_proto_obj_defs") ? "tf_proto_obj_defs" : mode);
-        displayOutput(output, "#output", `No strings found on ${mode}!`);
+            $("#copy-output-btn").hide();
+            $("#output").hide();
+            $("#outputyt").show();
+        } else {
+            output = getTranslationsByString($("#search").val(), mode.includes("tf_proto_obj_defs") ? "tf_proto_obj_defs" : mode);
+            displayOutput(output, "#output", `No strings found on ${mode}!`);
 
-        $("#copy-output-btn").show();
-        $("#output").show();
-        $("#outputyt").hide();
-    }
+            $("#copy-output-btn").show();
+            $("#output").show();
+            $("#outputyt").hide();
+        }
+    }).catch(error => {
+        console.error(error);
+    });
 }
 
 function displayOutput(output, outputElement, message, renderHTML = false) {
@@ -308,127 +320,23 @@ function copyOutput() {
     document.execCommand("copy");
 }
 
+const commonLanguages = [
+    "brazilian", "czech", "danish", "dutch", "english", "finnish", "french",
+    "german", "hungarian", "italian", "japanese", "korean", "norwegian",
+    "polish", "portuguese", "romanian", "russian", "schinese", "spanish",
+    "swedish", "tchinese", "turkish"
+];
+
 const languageFiles = {
-    closecaption: [
-        "brazilian",
-        // "bulgarian",
-        "czech",
-        "danish",
-        "dutch",
-        "english",
-        "finnish",
-        "french",
-        "german",
-        // "greek",
-        "hungarian",
-        "italian",
-        "japanese",
-        "korean",
-        // "koreana",
-        // "latam",
-        "norwegian",
-        // "pirate",
-        "polish",
-        "portuguese",
-        "romanian",
-        "russian",
-        "schinese",
-        "spanish",
-        "swedish",
-        "tchinese",
-        // "thai",
-        "turkish"
-        // "ukrainian",
-        // "vietnamese"
-    ],
-    tf: [
-        "brazilian",
-        // "bulgarian",
-        "czech",
-        "danish",
-        "dutch",
-        "english",
-        "finnish",
-        "french",
-        "german",
-        // "greek",
-        "hungarian",
-        "italian",
-        "japanese",
-        "korean",
-        // "koreana",
-        // "latam",
-        "norwegian",
-        // "pirate",
-        "polish",
-        "portuguese",
-        "romanian",
-        "russian",
-        "schinese",
-        "spanish",
-        "swedish",
-        "tchinese",
-        // "thai",
-        "turkish"
-        // "ukrainian",
-        // "vietnamese"
-    ],
-    tf_quests: [
-        "brazilian",
-        "czech",
-        "danish",
-        "dutch",
-        "english",
-        "finnish",
-        "french",
-        "german",
-        "hungarian",
-        "italian",
-        "japanese",
-        "korean",
-        "norwegian",
-        "polish",
-        "portuguese",
-        "romanian",
-        "russian",
-        "schinese",
-        "spanish",
-        "swedish",
-        "tchinese",
-        "turkish"
-    ],
+    closecaption: commonLanguages,
+    tf: commonLanguages,
+    tf_quests: commonLanguages,
     tf_proto_obj_defs: [
-        "brazilian",
-        // "bulgarian",
-        "czech",
-        "danish",
-        "dutch",
-        "english",
-        "finnish",
-        "french",
-        "german",
-        // "greek",
-        "hungarian",
-        "italian",
-        // "japanese",
-        "korean",
-        // "koreana",
-        // "latam",
-        "norwegian",
-        // "pirate",
-        "polish",
-        "portuguese",
-        "romanian",
-        "russian",
-        "schinese",
-        "spanish",
-        "swedish",
-        "tchinese",
-        // "thai",
-        "turkish"
-        // "ukrainian",
-        // "vietnamese"
-    ]
+        ...commonLanguages.filter(lang => !["japanese"].includes(lang))
+    ],
+    hl2_chat: commonLanguages,
+    hl2_gameui: commonLanguages,
+    hl2_replay: commonLanguages
 };
 
 // Map languages to wiki language code
@@ -448,9 +356,9 @@ const langCodes = {
     japanese: "ja",
     korean: "ko",
     koreana: "ka", // Localization test file for korean
-    latam: "es-latam",
+    latam: "es-419",
     norwegian: "no",
-    pirate: "en-pirate",
+    pirate: "en-pirate", // STS test file
     polish: "pl",
     portuguese: "pt",
     romanian: "ro",
@@ -469,17 +377,62 @@ const languageData = {
     closecaption: [],
     tf: [],
     tf_quests: [],
-    tf_proto_obj_defs: []
+    tf_proto_obj_defs: [],
+    hl2_chat: [],
+    hl2_gameui: [],
+    hl2_replay: []
 };
 
-// Loop through each file in the languageFiles object
-for (const file in languageFiles) {
-    // Loop through each language in the current file
-    for (const language of languageFiles[file]) {
-        // Load the language file using the loadLangFile function and pass it a callback
-        loadLangFile(`${file}_${language}`, function (response) {
-            // Store the data from the loaded language file in the languageData object
-            languageData[file][language] = VDF.parse(response)["lang"]["Tokens"];
-        });
-    }
+function loadLanguageFiles(file) {
+    return new Promise((resolve, reject) => {
+        const fileMapping = {
+            "tf_proto_obj_defs2": "tf_proto_obj_defs",
+            "tf_proto_obj_defs3": "tf_proto_obj_defs"
+        };
+
+        file = fileMapping[file] || file;
+
+        if (languageData[file] && Object.keys(languageData[file]).length > 0) {
+            console.log(`Language data for ${file} is already loaded. Skipping...`);
+            resolve();
+            return;
+        }
+
+        if (languageFiles[file]) {
+            let loadedCount = 0;
+            const totalFiles = languageFiles[file].length;
+
+            console.log(`Starting to load language files for ${file}. Total files: ${totalFiles}`);
+
+            const areWeDoneYet = () => {
+                if (loadedCount === totalFiles) {
+                    console.log("All language files have been loaded.");
+                    resolve();
+                }
+            };
+
+            for (const language of languageFiles[file]) {
+                loadLangFile(`${file}_${language}`, function (response) {
+                    if (!languageData[file]) {
+                        languageData[file] = {};
+                    }
+
+                    // TODO: fix this for Source 2 VDFs
+                    languageData[file][language] = VDF.parse(response).lang.Tokens;
+
+                    loadedCount++;
+
+                    areWeDoneYet();
+                });
+            }
+
+            if (totalFiles === 0) {
+                console.log(`No languages to load for ${file}. Wrong filename?`);
+                resolve();
+            }
+        } else {
+            reject(new Error(`${file} not found in languageFiles. Wrong filename?`));
+        }
+    });
 }
+
