@@ -327,6 +327,11 @@ const commonLanguages = [
     "swedish", "tchinese", "turkish"
 ];
 
+const commonLanguagesP8 = [
+    "brazilian", "czech", "english", "french", "german", "latam", "polish",
+    "russian", "schinese", "spanish", "turkish", "ukrainian"
+];
+
 const languageFiles = {
     closecaption: commonLanguages,
     tf: commonLanguages,
@@ -336,7 +341,12 @@ const languageFiles = {
     ],
     hl2_chat: commonLanguages,
     hl2_gameui: commonLanguages,
-    hl2_replay: commonLanguages
+    hl2_replay: commonLanguages,
+    citadel_heroes: commonLanguagesP8,
+    citadel_gc: commonLanguagesP8,
+    citadel_attributes: commonLanguagesP8,
+    citadel_main: commonLanguagesP8,
+    citadel_mods: commonLanguagesP8
 };
 
 // Map languages to wiki language code
@@ -380,7 +390,12 @@ const languageData = {
     tf_proto_obj_defs: [],
     hl2_chat: [],
     hl2_gameui: [],
-    hl2_replay: []
+    hl2_replay: [],
+    citadel_heroes: [],
+    citadel_gc: [],
+    citadel_attributes: [],
+    citadel_main: [],
+    citadel_mods: []
 };
 
 function loadLanguageFiles(file) {
